@@ -750,6 +750,28 @@
   .plink{align-self:flex-start;background:none;border:0;padding:0;color:var(--dim);font-size:11.5px;cursor:pointer;
     text-decoration:underline;text-underline-offset:3px}
   .plink:hover{color:var(--cyan)}
+  .plink:disabled{opacity:.42;cursor:not-allowed;text-decoration:none}
+  .pplan{display:flex;flex-direction:column;gap:7px}
+  .pstep{display:flex;align-items:center;gap:10px;width:100%;text-align:left;cursor:pointer;
+    background:rgba(125,211,252,.05);border:1px solid var(--line);border-radius:10px;padding:8px 10px;
+    color:var(--ink);font-size:12.5px;font-family:inherit;transition:.2s}
+  .pstep:hover{border-color:rgba(125,211,252,.45);background:rgba(125,211,252,.1);transform:translateX(2px)}
+  .pstep .pn{flex:0 0 auto;width:18px;height:18px;border-radius:50%;display:grid;place-items:center;
+    font-size:10.5px;font-weight:700;color:#06121f;background:linear-gradient(180deg,#a5f3fc,#7dd3fc)}
+  .pstep .pt{flex:0 0 auto;font-weight:600}
+  .pstep .pw{flex:1 1 auto;text-align:right;color:var(--dim);font-size:11.5px}
+  .pstep .par{flex:0 0 auto;color:var(--cyan);font-size:11.5px;letter-spacing:.02em}
+  .pempty{margin:0;font-size:12.5px;color:var(--muted);line-height:1.75}
+  .pfoot{display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+  .pnote{margin:0;font-size:11.5px;color:var(--gold);line-height:1.6}
+  .pnote[hidden]{display:none}
+  .pcard.flash{animation:pflash 1.7s ease}
+  @keyframes pflash{0%,100%{box-shadow:0 0 0 0 rgba(125,211,252,0)}22%{box-shadow:0 0 0 3px rgba(125,211,252,.45)}}
+  .ptoast{position:fixed;left:50%;bottom:78px;transform:translate(-50%,14px);z-index:260;
+    padding:10px 16px;border-radius:999px;font-size:12.5px;color:#eaf6ff;
+    background:rgba(14,26,48,.94);border:1px solid rgba(125,211,252,.4);backdrop-filter:blur(10px);
+    opacity:0;pointer-events:none;transition:.26s}
+  .ptoast.show{opacity:1;transform:translate(-50%,0)}
   .racts{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:16px}
   .qrev{margin:18px 0 0;padding:14px 16px;border:1px solid rgba(251,113,133,.28);border-radius:13px;
     background:rgba(251,113,133,.06);text-align:left}
@@ -762,6 +784,13 @@
   [data-theme="paper"] .pcard{background:#fff;border-color:rgba(22,27,41,.14);box-shadow:0 6px 20px rgba(22,27,41,.05)}
   [data-theme="paper"] .pchip{background:#fff;border-color:rgba(22,27,41,.16);color:#3d4759}
   [data-theme="paper"] .pchip.on{background:#0e7490;border-color:#0e7490;color:#f7fbfd}
+  [data-theme="paper"] .pstep{background:rgba(14,116,144,.04);border-color:rgba(22,27,41,.14);color:#161b29}
+  [data-theme="paper"] .pstep:hover{background:rgba(14,116,144,.08);border-color:rgba(14,116,144,.4)}
+  [data-theme="paper"] .pstep .pn{background:#0e7490;color:#f7fbfd}
+  [data-theme="paper"] .pstep .pw{color:#5b6579}
+  [data-theme="paper"] .pstep .par{color:#0e7490}
+  [data-theme="paper"] .pnote{color:#8a5a00}
+  [data-theme="paper"] .ptoast{background:rgba(255,255,255,.97);color:#161b29;border-color:rgba(22,27,41,.16)}
   [data-theme="paper"] .btn.ghost{color:#3d4759;background:rgba(22,27,41,.05);border-color:rgba(22,27,41,.14)}
   [data-theme="paper"] .btn.ghost:hover{background:rgba(22,27,41,.09)}
   [data-theme="paper"] .qrev{background:rgba(190,18,60,.05);border-color:rgba(190,18,60,.22)}
@@ -769,6 +798,9 @@
   [data-theme="paper"] .qrev .qans{color:#15803d}
   @media (max-width:560px){
     .pcard{padding:14px 14px;margin-top:20px}
+    .pstep{flex-wrap:wrap;font-size:12px;padding:8px 9px}
+    .pstep .pw{flex-basis:100%;text-align:left;padding-left:28px;font-size:11px}
+    .pstep .par{display:none}
     .qrev{padding:12px 13px}
     .racts .btn{flex:1 1 auto}
   }
@@ -1331,10 +1363,15 @@
       </div>
 
       <div class="pcard reveal" id="pcard">
-        <div class="phead"><span>你的阅读进度</span><span class="pcount" id="pCount">0 / 10 章</span></div>
+        <div class="phead"><span>你的学习路径</span><span class="pcount" id="pCount">0 / 10 章</span></div>
+        <p class="pnote" id="pNote" hidden></p>
         <div class="pchips" id="pChips"></div>
         <p class="pquiz" id="pQuiz">还没做过测验。</p>
-        <button class="plink" id="pReset" type="button">重置阅读记录</button>
+        <div class="pplan" id="pPlan"></div>
+        <div class="pfoot">
+          <button class="plink" id="pShare" type="button">复制路径链接</button>
+          <button class="plink" id="pReset" type="button">重置记录</button>
+        </div>
       </div>
     </div>
   </section>
@@ -2570,6 +2607,7 @@
           quizEl.textContent="还没做过测验。";
         }
       }
+      try{ document.dispatchEvent(new Event("cosmos:progress")); }catch(e){}
     }
     function mark(id){
       if(!data.seen[id]){ data.seen[id]=1; save(); render(); }
@@ -2591,7 +2629,9 @@
       quiz:function(score,total,wrong){
         data.quiz={score:score,total:total,wrong:wrong,at:Date.now()};
         save(); render();
-      }
+      },
+      state:function(){ return data; },
+      chapters:CHAPTERS
     };
   })();
 
@@ -2612,6 +2652,8 @@
     {q:"宇宙微波背景辐射是什么？",opts:["恒星发出的光","大爆炸后约 38 万年留下的余辉","黑洞周围的辐射"],a:1,
      why:"宇宙冷却到约 3000 K 时，光第一次可以自由传播。这些光被随后的空间膨胀拉长到微波波段，今天以 2.7 K 的低温充满整个天空——它是我们能看到的「最古老的画面」。"}
   ];
+  const QUIZ_SEC=["history","scale","solar","recipe","star","scale","know"];
+  QUIZ.forEach(function(q,i){ q.sec=QUIZ_SEC[i]; });
   let qi=0, qscore=0, qlock=false;
   let order=QUIZ.map(function(_,i){ return i; });
   let wrong=[];
@@ -3233,6 +3275,131 @@
       paint();
     });
     paint();
+  })();
+
+  /* ================= 复习单 / 路径分享 ================= */
+  (function(){
+    const planEl=$("#pPlan"), noteEl=$("#pNote"), shareEl=$("#pShare"), cardEl=$("#pcard");
+    const ORDER=PROG.chapters.map(function(c){ return c[0]; });
+    const LABEL={}; PROG.chapters.forEach(function(c){ LABEL[c[0]]=c[1]; });
+    let shared=null;
+
+    (function parseShare(){
+      const sp=new URLSearchParams(location.search);
+      const rawP=(sp.get("p")||"").trim(), rawW=(sp.get("w")||"").trim();
+      if(!rawP&&!rawW) return;
+      const ids=rawP?rawP.split(",").map(function(x){return x.trim();}).filter(function(x){return ORDER.indexOf(x)>=0;}):[];
+      const ws=rawW?rawW.split(",").map(function(x){return parseInt(x,10);}).filter(function(n){return n>=0&&n<QUIZ.length;}):[];
+      if(ids.length||ws.length) shared={ids:ids,wrong:ws};
+    })();
+
+    function baseUrl(){
+      try{ return location.origin+location.pathname; }
+      catch(e){ return location.href.split("?")[0]; }
+    }
+    function jump(id){
+      const el=document.getElementById(id); if(!el) return;
+      const prev=document.documentElement.style.scrollBehavior;
+      document.documentElement.style.scrollBehavior="auto";
+      window.scrollTo(0, el.getBoundingClientRect().top+window.scrollY-86);
+      document.documentElement.style.scrollBehavior=prev;
+      const h=el.querySelector("h2");
+      if(h){ h.classList.remove("flash"); void h.offsetWidth; h.classList.add("flash"); setTimeout(function(){h.classList.remove("flash");},1700); }
+    }
+    function toast(msg){
+      let el=document.getElementById("pToast");
+      if(!el){ el=document.createElement("div"); el.id="pToast"; el.className="ptoast"; document.body.appendChild(el); }
+      el.textContent=msg; el.classList.add("show");
+      clearTimeout(el._t); el._t=setTimeout(function(){ el.classList.remove("show"); },2600);
+    }
+    function fallback(text){
+      const ta=document.createElement("textarea");
+      ta.value=text; ta.style.position="fixed"; ta.style.top="-100px"; ta.style.opacity="0";
+      document.body.appendChild(ta); ta.select();
+      let ok=false; try{ ok=document.execCommand("copy"); }catch(e){}
+      document.body.removeChild(ta);
+      if(ok) toast("路径链接已复制，发给朋友一起看"); else window.prompt("复制这个链接分享：", text);
+    }
+    function copyLink(){
+      const d=PROG.state(), why={};
+      ORDER.forEach(function(id){ if(!d.seen[id]) why[id]=1; });
+      ((d.quiz&&d.quiz.wrong)||[]).forEach(function(n){ const s=QUIZ[n]&&QUIZ[n].sec; if(s) why[s]=1; });
+      const ids=ORDER.filter(function(id){ return why[id]; });
+      const w=((d.quiz&&d.quiz.wrong)||[]).join(",");
+      const url=baseUrl()+"?p="+ids.join(",")+(w?"&w="+w:"");
+      const done=function(){ toast("路径链接已复制，发给朋友一起看"); };
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(url).then(done, function(){ fallback(url); });
+      } else fallback(url);
+    }
+
+    function render(){
+      if(!planEl) return;
+      const d=PROG.state();
+      let list=[], banner="";
+      if(shared){
+        const why={};
+        shared.ids.forEach(function(id){ why[id]="分享的路径"; });
+        shared.wrong.forEach(function(n){
+          const s=QUIZ[n]&&QUIZ[n].sec;
+          if(s) why[s]="分享者错了第 "+(n+1)+" 题";
+        });
+        list=ORDER.filter(function(id){ return why[id]; }).map(function(id){ return {id:id,label:LABEL[id],why:why[id]}; });
+        banner="收到一条学习路径 · 共 "+list.length+" 步，按顺序看即可。";
+      } else {
+        const why={};
+        ORDER.forEach(function(id){ if(!d.seen[id]) why[id]=["还没读过"]; });
+        ((d.quiz&&d.quiz.wrong)||[]).forEach(function(n){
+          const s=QUIZ[n]&&QUIZ[n].sec; if(!s) return;
+          (why[s]=why[s]||[]).push("第 "+(n+1)+" 题答错了");
+        });
+        list=ORDER.filter(function(id){ return why[id]; }).map(function(id){ return {id:id,label:LABEL[id],why:why[id].join(" · ")}; });
+      }
+      if(noteEl){ noteEl.textContent=banner; noteEl.hidden=!banner; }
+      planEl.innerHTML="";
+      if(!list.length){
+        const p=document.createElement("p");
+        p.className="pempty";
+        p.textContent="十章都读过了，测验也没有遗留的错题。接下来可以随手翻术语速查，或者把日历再走一遍。";
+        planEl.appendChild(p);
+        if(shareEl) shareEl.hidden=true;
+        return;
+      }
+      if(shareEl){
+        const unread=ORDER.filter(function(id){ return !d.seen[id]; }).length;
+        const hasWrong=!!(d.quiz&&d.quiz.wrong&&d.quiz.wrong.length);
+        shareEl.hidden=false;
+        shareEl.disabled=!hasWrong && unread>=ORDER.length;
+        shareEl.title=shareEl.disabled?"读几章或做一次测验之后再分享":"把这条路径发给别人";
+      }
+      list.forEach(function(s,i){
+        const b=document.createElement("button");
+        b.type="button"; b.className="pstep"; b.dataset.go=s.id;
+        b.innerHTML='<span class="pn">'+(i+1)+'</span><span class="pt"></span><span class="pw"></span><span class="par">去 →</span>';
+        b.querySelector(".pt").textContent=s.label;
+        b.querySelector(".pw").textContent=s.why;
+        planEl.appendChild(b);
+      });
+    }
+
+    if(planEl) planEl.addEventListener("click",function(e){
+      const b=e.target.closest(".pstep"); if(!b) return;
+      jump(b.dataset.go);
+    });
+    if(shareEl) shareEl.addEventListener("click",copyLink);
+    document.addEventListener("cosmos:progress",render);
+    render();
+
+    if(shared && cardEl){
+      setTimeout(function(){
+        const prev=document.documentElement.style.scrollBehavior;
+        document.documentElement.style.scrollBehavior="auto";
+        window.scrollTo(0, cardEl.getBoundingClientRect().top+window.scrollY-100);
+        document.documentElement.style.scrollBehavior=prev;
+        cardEl.classList.add("flash");
+        setTimeout(function(){ cardEl.classList.remove("flash"); },1800);
+      },700);
+    }
   })();
 
   /* ================= deep links ================= */
