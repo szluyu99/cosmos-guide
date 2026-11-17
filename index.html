@@ -526,6 +526,34 @@
     #expCanvas{height:220px}
   }
 
+  /* ---------- shared time bar ---------- */
+  .tbar{position:fixed;left:0;right:0;bottom:0;z-index:120;
+    background:linear-gradient(180deg,rgba(6,10,20,.74),rgba(6,10,20,.95));
+    -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+    border-top:1px solid var(--line);animation:tbin .3s ease both}
+  @keyframes tbin{from{transform:translateY(100%)}to{transform:none}}
+  .tbar[hidden]{display:none}
+  .tbar-in{max-width:var(--max);margin:0 auto;display:flex;align-items:center;gap:15px;padding:10px 24px}
+  .tbar-lab{font-size:10.5px;letter-spacing:.18em;color:var(--dim);white-space:nowrap}
+  .tbar-age{font-size:15px;font-weight:600;color:#8b94a8;font-variant-numeric:tabular-nums;
+    letter-spacing:.02em;min-width:92px;transition:color .3s}
+  .tbar-age.live{color:var(--gold)}
+  .tbar-range{flex:1;min-width:70px}
+  .tbar-hint{font-size:11.5px;color:var(--dim);white-space:nowrap;letter-spacing:.02em}
+  .tbar-hint b{color:var(--cyan);font-weight:600}
+  .tbar-jump{font-size:11.5px;color:#b9c8e4;background:rgba(125,211,252,.1);
+    border:1px solid rgba(125,211,252,.22);border-radius:99px;padding:6px 12px;cursor:pointer;
+    white-space:nowrap;transition:background .2s,border-color .2s,color .2s}
+  .tbar-jump:hover{background:rgba(125,211,252,.18);border-color:rgba(125,211,252,.5);color:#eaf3ff}
+  body.tb-on{padding-bottom:60px}
+  body.tb-on .totop{bottom:78px}
+  @media(max-width:720px){
+    .tbar-in{gap:10px;padding:9px 14px}
+    .tbar-lab,.tbar-hint,.tbar-jump{display:none}
+    .tbar-age{min-width:70px;font-size:13.5px}
+    body.tb-on{padding-bottom:56px}
+  }
+  @media print{.tbar{display:none!important}}
   /* ---------- back to top ---------- */
   .totop{position:fixed;right:clamp(14px,3vw,30px);bottom:clamp(14px,3vw,30px);z-index:55;width:42px;height:42px;
     border-radius:50%;display:grid;place-items:center;cursor:pointer;font-size:15px;line-height:1;
@@ -677,6 +705,11 @@
   :root[data-theme="paper"] .tick{color:#6b7488}
   :root[data-theme="paper"] .tick i{background:rgba(22,27,41,.25)}
   :root[data-theme="paper"] .rdot{background:#0e7490;box-shadow:0 0 0 3px rgba(14,116,144,.16)}
+  :root[data-theme="paper"] .tbar{background:linear-gradient(180deg,rgba(246,243,236,.86),rgba(246,243,236,.98));
+    border-top-color:rgba(22,27,41,.14)}
+  :root[data-theme="paper"] .tbar-age{color:#6b7280}
+  :root[data-theme="paper"] .tbar-age.live{color:#a16207}
+  :root[data-theme="paper"] .tbar-jump{color:#0e7490;background:rgba(14,116,144,.08);border-color:rgba(14,116,144,.24)}
   :root[data-theme="paper"] .totop{background:rgba(255,255,255,.9);border-color:rgba(22,27,41,.16);color:#161b29}
   :root[data-theme="paper"] .hintline,:root[data-theme="paper"] .mnote{color:#6b7488}
   :root[data-theme="paper"] .srcbox b{color:#101523}
@@ -800,7 +833,7 @@
     @page{margin:15mm 13mm 14mm}
     html,body{background:#fff!important;color:#111!important}
     #sky,.scrollbar,nav,.totop,.skip,.scrollcue,.navlinks,canvas,input,button,
-    .cal-track,.cal-chips,.cal-play,.seg,.miniseg,.pcard,.gbtn,.gpanel,.chipbar,.ctl,.ladctl,.exo-ctl,.exp-ctl{display:none!important}
+    .cal-track,.cal-chips,.cal-play,.seg,.miniseg,.pcard,.gbtn,.gpanel,.chipbar,.ctl,.ladctl,.exo-ctl,.exp-ctl,.tbar{display:none!important}
     .reveal{opacity:1!important;transform:none!important}
     *,*::before,*::after{transition:none!important;animation:none!important}
     *,*::before,*::after{background:none!important;box-shadow:none!important;text-shadow:none!important;
@@ -847,6 +880,17 @@
   <button class="themebtn" id="themeBtn" type="button" aria-label="切换到浅色主题" aria-pressed="false" title="切到浅色主题">◐</button>
 </nav>
 <button class="totop" id="toTop" type="button" aria-label="回到顶部">↑</button>
+
+<div class="tbar" id="tbar" hidden>
+  <div class="tbar-in">
+    <span class="tbar-lab">宇宙年龄</span>
+    <b class="tbar-age" id="tAge">今天</b>
+    <input class="tbar-range" id="tRange" type="range" min="0" max="13.8" step="0.005" value="13.8"
+           aria-label="宇宙年龄，单位十亿年，与简史、日历、膨胀三处联动">
+    <span class="tbar-hint">拖任一处 · <b>简史 / 日历 / 膨胀</b> 同步</span>
+    <button class="tbar-jump" id="tJump" type="button">去日历 →</button>
+  </div>
+</div>
 
 <main id="main">
   <!-- ============ HERO ============ -->
@@ -1124,7 +1168,7 @@
           <canvas id="expCanvas" role="img" aria-label="宇宙膨胀示意图：随时间推移网格与星系间距变大"></canvas>
           <div class="exp-ctl">
             <label for="expSlider">把时钟拨回</label>
-            <input type="range" id="expSlider" min="0.25" max="1" step="0.01" value="1" aria-label="宇宙尺度因子">
+            <input type="range" id="expSlider" min="0.02" max="1" step="0.01" value="1" aria-label="宇宙尺度因子">
           </div>
           <div class="exp-read">
             <span><b id="expA">100%</b>今天的尺度</span>
@@ -1936,6 +1980,7 @@
   });
 
   /* ================= ERAS ================= */
+  let eraSink=null, daySink=null;
   const ERAS=[
     {name:"大爆炸",when:"138 亿年前 · t = 0",temp:"温度 > 10³² K",
      body:"时间与空间同时开始。整个宇宙处在一个极热、极密的状态里，四种基本力还纠缠在一起。这不是「空间中的一次爆炸」，而是空间本身在膨胀。",
@@ -1985,7 +2030,7 @@
     b.addEventListener("click",function(){ stopPlay(); setEra(i); });
     eraDots.appendChild(b);
   });
-  function setEra(i){
+  function setEra(i,silent){
     eraIdx=i;
     const e=ERAS[i];
     eraOrb.style.setProperty("--size",e.size+"px");
@@ -2001,6 +2046,7 @@
     eraTag.textContent="Stage "+String(i+1).padStart(2,"0");
     $$(".rdot",eraDots).forEach(function(d,k){ d.classList.toggle("on",k===i); });
     eraFill.style.width=(i/(ERAS.length-1)*100)+"%";
+    if(!silent && eraSink) eraSink(i);
   }
   setEra(0);
   function stopPlay(){
@@ -2741,8 +2787,14 @@
       chips.push({ev:ev,el:c});
     });
 
-    let cday=0, timer=0, playing=false, dragging=false;
-    document.addEventListener("cosmos:day",function(e){ setDay(clamp(+e.detail,0,SPAN)); });
+    let cday=0, timer=0, playing=false, dragging=false, dayDriven=false;
+    document.addEventListener("cosmos:day",function(e){
+      setDay(clamp(+e.detail,0,SPAN));          // 外部（深链）要求换一天 → 照常广播出去
+    });
+    document.addEventListener("cosmos:settime",function(e){
+      dayDriven=true;                            // 由共享时钟驱动 → 不要再回声给时钟
+      try{ setDay(clamp(+e.detail,0,SPAN)); } finally { dayDriven=false; }
+    });
 
     function setDay(d){
       cday=clamp(d,0,SPAN);
@@ -2765,6 +2817,7 @@
         textEl.innerHTML=periodText(cday);
       }
       chips.forEach(function(c){ c.el.classList.toggle("on",c.ev===near && best<=0.55); });
+      if(!dayDriven && daySink) daySink(cday);
     }
     function stop(){
       if(timer){ clearInterval(timer); timer=0; }
@@ -2838,6 +2891,15 @@
       const w=ew, h=eh, cx=w/2, cy=h/2, R=Math.min(w,h)*0.44, Ra=R*a;
       ctx2.clearRect(0,0,w,h);
 
+      // 极早期：整块空间缩成一个又热又密的点
+      if(a<0.09){
+        const gg=ctx2.createRadialGradient(cx,cy,0,cx,cy,R*0.62);
+        gg.addColorStop(0,"rgba(255,196,120,.55)");
+        gg.addColorStop(.35,"rgba(255,120,80,.18)");
+        gg.addColorStop(1,"rgba(255,120,80,0)");
+        ctx2.fillStyle=gg; ctx2.beginPath(); ctx2.arc(cx,cy,R*0.62,0,Math.PI*2); ctx2.fill();
+      }
+
       // 今天的边界（虚线）
       ctx2.save(); ctx2.setLineDash([3,6]); ctx2.lineWidth=1;
       ctx2.strokeStyle="rgba(148,163,184,.26)";
@@ -2877,6 +2939,7 @@
       ctx2.fillStyle="rgba(233,238,249,.8)"; ctx2.fillText("我们", cx, cy-13);
       ctx2.fillStyle="rgba(148,163,184,.5)"; ctx2.fillText("此刻", cx, cy-R-9);
       if(a<0.985){ ctx2.fillStyle="rgba(125,211,252,.8)"; ctx2.fillText("那时", cx, cy-Ra-9); }
+      if(a<0.09){ ctx2.fillStyle="rgba(255,205,160,.92)"; ctx2.fillText("早期宇宙 · 又热又密", cx, cy+R*0.62+16); }
     }
 
     function setExpand(){
@@ -2884,7 +2947,7 @@
       drawExpand();
       $("#expA").textContent=Math.round(a*100)+"%";
       const yi=13.8*Math.pow(a,1.5)*10;          // 十亿年 → 亿年
-      $("#expT").textContent=(yi>=50?yi.toFixed(0):yi.toFixed(1))+" 亿年";
+      $("#expT").textContent=a<=0.021?"不到 1 亿年":((yi>=50?yi.toFixed(0):yi.toFixed(1))+" 亿年");
       $("#expD").textContent="×"+a.toFixed(2);
     }
 
@@ -2954,6 +3017,88 @@
       clearTimeout(cv.__rz);
       cv.__rz=setTimeout(function(){ sizeExpand(); drawExpand(); },150);
     });
+  })();
+
+  /* ================= TIME AXIS · 三处共享同一个宇宙年龄 ================= */
+  (function(){
+    const AGE=13.8e9;                              // 宇宙年龄（年）
+    const tbar=$("#tbar"), tAge=$("#tAge"), tRange=$("#tRange");
+    const expEl=$("#expSlider");
+    /* 每个纪元的起始年龄（判定用）与代表年龄（点开这一章时跳到哪） */
+    const ERA_T0 =[0, 3.2e-14, 5.7e-6, 3.8e5, 1e8,  3e8,  5e8,  9.2e9, 1.3e10];
+    const ERA_REP=[1, 1e-6,    1.7e-3, 3.8e5, 1.5e8,3.5e8,1.5e9, 9.2e9, 1.378e10];
+    let T=null, lock=false;
+
+    function ageStr(t){
+      if(!(t>0)) return "大爆炸瞬间";
+      if(t<1/24){
+        const sec=t*3.156e7;
+        if(sec<90) return sec.toFixed(sec<10?1:0)+" 秒";
+        if(sec<5400) return Math.round(sec/60)+" 分钟";
+        return (sec/3600).toFixed(1)+" 小时";
+      }
+      if(t<1) return (t*24).toFixed(t*24<10?1:0)+" 小时";
+      if(t<1e4) return Math.round(t)+" 年";
+      if(t<1e6) return Math.round(t/1e3)+" 千年";
+      if(t<1e8) return Math.round(t/1e6)+" 百万年";
+      return (t/1e8).toFixed(t<1e9?1:0)+" 亿年";
+    }
+    function paint(){
+      tAge.textContent = T==null ? "今天" : ageStr(T);
+      tAge.classList.toggle("live", T!=null);
+    }
+
+    function apply(t,src){
+      if(lock) return;
+      t=clamp(t,0,AGE);
+      lock=true; T=t;
+      let ei=0;
+      for(let i=ERA_T0.length-1;i>=0;i--){ if(t>=ERA_T0[i]){ ei=i; break; } }
+      if(src!=="era") stopPlay();
+      if(ei!==eraIdx) setEra(ei,true);
+      document.dispatchEvent(new CustomEvent("cosmos:settime",{detail:t/AGE*365}));
+      const a=clamp(Math.pow(t/AGE,2/3),0.02,1);
+      if(Math.abs((parseFloat(expEl.value)||1)-a)>0.002){
+        expEl.value=a.toFixed(3);
+        expEl.dispatchEvent(new Event("input",{bubbles:true}));
+      }
+      lock=false;
+      paint();
+      if(src!=="bar") tRange.value=(t/1e9).toFixed(3);
+    }
+
+    /* 三处把「用户在自己那一处改了时间」告诉这里 */
+    eraSink=function(i){ apply(ERA_REP[i],"era"); };
+    daySink=function(d){ apply(d/365*AGE,"cal"); };
+    expEl.addEventListener("input",function(){
+      if(lock) return;
+      apply(Math.pow(parseFloat(expEl.value)||1,1.5)*AGE,"exp");
+    });
+    tRange.addEventListener("input",function(){
+      apply((parseFloat(tRange.value)||0)*1e9,"bar");
+    });
+    $("#tJump").addEventListener("click",function(){
+      const el=document.getElementById("calendar"); if(!el) return;
+      const prev=document.documentElement.style.scrollBehavior;
+      document.documentElement.style.scrollBehavior="auto";
+      el.scrollIntoView({block:"start"});
+      document.documentElement.style.scrollBehavior=prev;
+    });
+
+    /* 只在三章里出现 */
+    const on={};
+    const ioT=new IntersectionObserver(function(es){
+      es.forEach(function(e){ on[e.target.id]=e.isIntersecting; });
+      const any=!!(on.history||on.calendar||on.expand);
+      if(tbar.hidden===any){ tbar.hidden=!any; }
+      document.body.classList.toggle("tb-on",any);
+    },{threshold:0,rootMargin:"-90px 0px -45% 0px"});
+    ["history","calendar","expand"].forEach(function(id){
+      const el=document.getElementById(id); if(el) ioT.observe(el);
+    });
+
+    paint();
+    apply(0,"init");          // 打开页面时，时钟停在「起点」：三处一致
   })();
 
   /* ================= reveal + nav + progress ================= */
@@ -3128,7 +3273,7 @@
     }
     requestAnimationFrame(function(){
       if(q.has("z")) setv("zSlider",clamp(parseFloat(q.get("z"))||0,0,0.65));
-      else if(q.has("a")) setv("expSlider",clamp(parseFloat(q.get("a"))||1,0.25,1));
+      else if(q.has("a")) setv("expSlider",clamp(parseFloat(q.get("a"))||1,0.02,1));
       if(q.has("mass")) setv("mSlider",clamp(parseFloat(q.get("mass"))||1,0.1,40));
       if(q.has("year")) setv("exoYear",clamp(parseInt(q.get("year"),10)||2025,1995,2025));
       if(q.has("d")){
