@@ -161,6 +161,19 @@
   .solar-stage{position:relative;border-radius:22px;overflow:hidden;border:1px solid var(--line);
     background:radial-gradient(90% 90% at 50% 45%,#0a1024,#04060f 75%);min-height:380px}
   #solarCanvas{display:block;width:100%;height:100%;position:absolute;inset:0;cursor:crosshair}
+  .soldate{display:flex;align-items:center;gap:18px;justify-content:space-between;flex-wrap:wrap;
+    margin:0 0 18px;padding:13px 16px;border-radius:16px;border:1px solid var(--line);background:var(--card)}
+  .sd-l{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;min-width:0}
+  .sd-k{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
+  .soldate b{font-variant-numeric:tabular-nums;font-size:15px;color:#dbe7fb}
+  .sd-hint{font-size:11px;color:var(--dim)}
+  .sd-r{display:flex;align-items:center;gap:10px;flex:1;justify-content:flex-end;min-width:250px}
+  #solRange{flex:1;max-width:260px}
+  #solDate{font-family:inherit;font-size:12px;padding:6px 9px;border-radius:9px;border:1px solid var(--line);
+    background:rgba(8,14,30,.72);color:#c7d3e8;color-scheme:dark}
+  .pnow{font-size:11.5px;color:#8fb0d8;margin:-9px 0 12px;font-variant-numeric:tabular-nums;min-height:1.2em}
+  @media(max-width:560px){.soldate{gap:8px;padding:10px 12px}.sd-hint{display:none}.sd-r{min-width:100%}#solRange{max-width:none}}
+  @media print{.soldate{display:none!important}}
   .solar-tools{position:absolute;left:14px;top:14px;display:flex;gap:8px;flex-wrap:wrap;z-index:3}
   .chip{border:1px solid var(--line);background:rgba(8,14,30,.72);color:#c7d3e8;border-radius:999px;
     padding:6px 12px;font-size:11.5px;cursor:pointer;font-family:inherit;transition:.2s;backdrop-filter:blur(4px)}
@@ -720,6 +733,10 @@
   :root[data-theme="paper"] .exp-card{background:#fff;border-color:rgba(22,27,41,.12)}
   :root[data-theme="paper"] .exp-spec{background:#0b1020}
   :root[data-theme="paper"] .scale-stage,
+  :root[data-theme="paper"] .soldate{background:#fff;border-color:rgba(22,27,41,.14)}
+  :root[data-theme="paper"] .soldate b{color:#101523}
+  :root[data-theme="paper"] #solDate{background:#fff;color:#161b29;color-scheme:light;border-color:rgba(22,27,41,.16)}
+  :root[data-theme="paper"] .pnow{color:#4b5568}
   :root[data-theme="paper"] .solar-stage,
   :root[data-theme="paper"] .ladviz,
   :root[data-theme="paper"] .exp-spec{
@@ -983,20 +1000,34 @@
       <header class="sec-head reveal">
         <p class="kicker">02 / Solar system</p>
         <h2 id="h-solar">你家的<em>院子</em></h2>
-        <p class="lede">太阳占了太阳系 99.86% 的质量。八大行星沿着几乎同一个平面绕它旋转——这个平面叫黄道面。点击任意行星，看它到底是一颗什么样的世界。</p>
+        <p class="lede">太阳占了太阳系 99.86% 的质量。八大行星沿着几乎同一个平面绕它旋转——这个平面叫黄道面。点击任意行星，看它到底是一颗什么样的世界。拖一下日期条，它们会回到那一天的真实站位——角度和距离按星历计算，只有轨道半径被压缩。</p>
       </header>
+
+      <div class="soldate reveal">
+        <div class="sd-l">
+          <span class="sd-k">观测日期</span>
+          <b id="solDateOut">今天</b>
+          <span class="sd-hint">行星按真实星历就位（JPL 近似轨道根数）</span>
+        </div>
+        <div class="sd-r">
+          <input type="range" id="solRange" min="0" max="109938" step="1" value="0" aria-label="观测日期">
+          <input type="date" id="solDate" min="1800-01-01" max="2100-12-31" aria-label="选择观测日期">
+          <button class="chip" id="solToday" type="button">今天</button>
+        </div>
+      </div>
 
       <div class="solar-grid reveal">
         <div class="solar-stage">
           <canvas id="solarCanvas" role="img" aria-label="太阳系轨道模拟"></canvas>
           <div class="solar-tools">
-            <button class="chip on" data-speed="1">1×</button>
-            <button class="chip" data-speed="4">4×</button>
-            <button class="chip" data-speed="12">12×</button>
+            <button class="chip on" data-step="0">暂停</button>
+            <button class="chip" data-step="1">1 天/秒</button>
+            <button class="chip" data-step="30">1 月/秒</button>
+            <button class="chip" data-step="365">1 年/秒</button>
             <button class="chip" id="toggleOrbits">轨道线</button>
             <button class="chip" id="toggleLabels">名称</button>
           </div>
-          <div class="solar-legend">轨道半径与行星大小经过压缩<br>真实比例下，地球只是一粒尘埃</div>
+          <div class="solar-legend">角度与距离按真实星历计算<br>轨道半径与行星大小经过压缩</div>
         </div>
 
         <aside class="planet-panel">
@@ -1008,6 +1039,7 @@
             </div>
           </div>
           <p class="ptag" id="pTag"></p>
+          <div class="pnow" id="pNow"></div>
           <div class="pstats" id="pStats"></div>
           <div class="planet-row" id="planetRow"></div>
         </aside>
@@ -1902,8 +1934,41 @@
       tag:"最远的行星，也是风速之王：大气风速可达 2,100 km/h。它是先被数学算出来、再被望远镜找到的。",
       stats:[["直径","49,244 km"],["距日","30.07 AU"],["公转","164.8 年"],["自转","16.1 小时"],["云顶温度","约 -200℃"],["卫星","16 颗"]]}
   ];
-  let solW=0,solH=0,selected=2,speed=1,showOrbits=true,showLabels=true;
-  let angles=PLANETS.map(function(_,i){return i*0.9;});
+  /* 真实星历：JPL「Keplerian Elements for Approximate Positions of the Major Planets」
+     数组 = [a(AU), e, L0(deg), varpi0(deg), dL/dt(deg/century), dvarpi/dt(deg/century)] */
+  const PLAN_EL={
+    mercury:[0.38709927,0.20563593,252.25032350,77.45779628,149472.67411175,0.16047689],
+    venus:  [0.72333566,0.00677672,181.97909950,131.60246718,58517.81538729,0.00268329],
+    earth:  [1.00000261,0.01671123,100.46457166,102.93768193,35999.37244981,0.32327364],
+    mars:   [1.52371034,0.09339410,-4.55343205,-23.94362959,19140.30268499,0.44441088],
+    jupiter:[5.20288700,0.04838624,34.39644051,14.72847983,3034.74612775,0.21252668],
+    saturn: [9.53667594,0.05386179,49.95424423,92.59887831,1222.49362201,-0.41897216],
+    uranus: [19.18916464,0.04725744,313.23810451,170.95427630,428.48202785,0.40805281],
+    neptune:[30.06992276,0.00859048,-55.12002969,44.96476227,218.45945325,-0.32241464]
+  };
+  const J2000=Date.UTC(2000,0,1,12,0,0);
+  const SD_MIN=Math.round((Date.UTC(1800,0,1,12)-J2000)/864e5);
+  const SD_MAX=Math.round((Date.UTC(2100,11,31,12)-J2000)/864e5);
+  const TAU2=Math.PI*2;
+  /* 由平近点角用中心差方程求真黄经（e 均小于 0.21，三阶展开误差 < 0.01°） */
+  function posOf(id,d){
+    const el=PLAN_EL[id]; if(!el) return {lon:0,r:1};
+    const T=d/36525, e=el[1];
+    const L=el[2]+el[4]*T, w=el[3]+el[5]*T;
+    let M=((L-w)%360+540)%360-180;
+    const mr=M*Math.PI/180;
+    const C=(2*e-e*e*e/4)*Math.sin(mr)+(5/4)*e*e*Math.sin(2*mr)+(13/12)*e*e*e*Math.sin(3*mr);
+    const nu=M+C, nuv=nu*Math.PI/180;
+    const r=el[0]*(1-e*e)/(1+e*Math.cos(nuv));
+    const lon=((L+C)%360+360)%360;
+    return {lon:lon,r:r};
+  }
+  function isoOf(d){ return new Date(J2000+d*864e5).toISOString().slice(0,10); }
+  function cnOf(d){ const t=new Date(J2000+d*864e5);
+    return t.getUTCFullYear()+" 年 "+(t.getUTCMonth()+1)+" 月 "+t.getUTCDate()+" 日"; }
+
+  let solW=0,solH=0,selected=2,step=0,showOrbits=true,showLabels=true;
+  let solDay=Math.round((Date.now()-J2000)/864e5), lastDayStr="";
   let hits=[];
   function sizeSolar(){
     const dpr=Math.min(window.devicePixelRatio||1,2);
@@ -1918,6 +1983,11 @@
   }
   function drawSolar(dt,t){
     if(!solW||!solH) return;
+    if(step>0){
+      solDay+=dt*step;
+      if(solDay>=SD_MAX){ solDay=SD_MAX; step=0; setStep(0); }
+      setSol(solDay,true);
+    }
     const cx=solW*0.5, cy=solH*0.5;
     solCtx.clearRect(0,0,solW,solH);
     // star dust
@@ -1944,8 +2014,8 @@
         solCtx.lineWidth=i===selected?1.4:1;
         solCtx.beginPath(); solCtx.ellipse(cx,cy,rr,ry,0,0,TAU); solCtx.stroke();
       }
-      if(!reduce) angles[i]+=dt*speed*1.05/p.period;
-      const px=cx+Math.cos(angles[i])*rr, py=cy+Math.sin(angles[i])*ry;
+      const q=posOf(p.id,solDay), ang=q.lon*Math.PI/180;
+      const px=cx+Math.cos(ang)*rr, py=cy+Math.sin(ang)*ry;
       hits.push({i:i,x:px,y:py,r:Math.max(18,p.r*1.8)});
       glow(solCtx,px,py,p.r*2.6,p.color+"55",1);
       solCtx.fillStyle=p.color;
@@ -1966,6 +2036,28 @@
       }
     }
   }
+  function renderNow(){
+    const nn=$("#pNow"); if(!nn) return;
+    const p=PLANETS[selected], q=posOf(p.id,solDay);
+    nn.textContent="此刻 · 黄经 "+q.lon.toFixed(1)+"° · 距日 "+q.r.toFixed(3)+" AU";
+  }
+  function setSol(d,quiet){
+    solDay=clamp(d,SD_MIN,SD_MAX);
+    const day=Math.round(solDay), str=cnOf(day);
+    if(str!==lastDayStr){
+      lastDayStr=str;
+      const o=$("#solDateOut"); if(o) o.textContent=str;
+      const di=$("#solDate"), iso=isoOf(day);
+      if(di&&di.value!==iso) di.value=iso;
+      const rg=$("#solRange"), want=String(day-SD_MIN);
+      if(rg&&rg.value!==want) rg.value=want;
+    }
+    if(!quiet) renderNow();
+  }
+  function setStep(v){
+    step=v;
+    $$(".solar-tools .chip[data-step]").forEach(function(x){x.classList.toggle("on",+x.dataset.step===v);});
+  }
   function renderPlanet(){
     const p=PLANETS[selected];
     $("#pName").textContent=p.cn;
@@ -1978,6 +2070,7 @@
       return '<div class="pstat"><span>'+s[0]+'</span><b>'+s[1]+'</b></div>';
     }).join("");
     $$(".pbtn").forEach(function(b,i){ b.classList.toggle("on",i===selected); });
+    renderNow();
   }
   const row=$("#planetRow");
   PLANETS.forEach(function(p,i){
@@ -2002,12 +2095,29 @@
     }
     if(best){ selected=best.i; renderPlanet(); }
   });
-  $$(".solar-tools .chip[data-speed]").forEach(function(b){
-    b.addEventListener("click",function(){
-      speed=parseFloat(b.dataset.speed);
-      $$(".solar-tools .chip[data-speed]").forEach(function(x){x.classList.toggle("on",x===b);});
-    });
+  $$(".solar-tools .chip[data-step]").forEach(function(b){
+    b.addEventListener("click",function(){ setStep(parseFloat(b.dataset.step)); });
   });
+  const solRangeEl=$("#solRange"), solDateEl=$("#solDate");
+  if(solRangeEl){
+    solRangeEl.min=String(0); solRangeEl.max=String(SD_MAX-SD_MIN);
+    solRangeEl.addEventListener("input",function(){ setStep(0); setSol(SD_MIN+ +this.value); });
+  }
+  if(solDateEl){
+    solDateEl.addEventListener("change",function(){
+      const t=Date.parse(this.value+"T12:00:00Z");
+      if(!isNaN(t)){ setStep(0); setSol((t-J2000)/864e5); }
+    });
+    solDateEl.addEventListener("input",function(){
+      const t=Date.parse(this.value+"T12:00:00Z");
+      if(!isNaN(t)) setSol((t-J2000)/864e5);
+    });
+  }
+  const solTodayEl=$("#solToday");
+  if(solTodayEl) solTodayEl.addEventListener("click",function(){
+    setStep(0); setSol(Math.round((Date.now()-J2000)/864e5));
+  });
+  setSol(solDay,true);
   $("#toggleOrbits").addEventListener("click",function(e){
     showOrbits=!showOrbits; e.currentTarget.classList.toggle("on",showOrbits);
   });
@@ -3416,6 +3526,7 @@
         if(touched.d!=null) p.set("d",(+touched.d).toFixed(1));
         if(touched.mass!=null) p.set("mass",(+touched.mass).toFixed(1));
         if(touched.year!=null) p.set("year",touched.year);
+        if(touched.date) p.set("date",touched.date);
         const qs=p.toString();
         history.replaceState(null,"",location.pathname+(qs?"?"+qs:"")+location.hash);
       }catch(e){}
@@ -3426,6 +3537,7 @@
       else if(t.id==="expSlider"){touched.a=t.value;touched.z=null;}
       else if(t.id==="mSlider"){touched.mass=t.value;}
       else if(t.id==="exoYear"){touched.year=t.value;}
+      else if(t.id==="solRange"||t.id==="solDate"){touched.date=isoOf(solDay);}
       else return;
       clearTimeout(tid); tid=setTimeout(persist,450);
     });
@@ -3443,6 +3555,10 @@
       else if(q.has("a")) setv("expSlider",clamp(parseFloat(q.get("a"))||1,0.02,1));
       if(q.has("mass")) setv("mSlider",clamp(parseFloat(q.get("mass"))||1,0.1,40));
       if(q.has("year")) setv("exoYear",clamp(parseInt(q.get("year"),10)||2025,1995,2025));
+      if(q.has("date")){
+        const td=Date.parse(q.get("date")+"T12:00:00Z");
+        if(!isNaN(td)){ setSol((td-J2000)/864e5); touched.date=q.get("date"); }
+      }
       if(q.has("d")){
         const dd=clamp(parseFloat(q.get("d"))||0,0,365);
         document.dispatchEvent(new CustomEvent("cosmos:day",{detail:dd}));

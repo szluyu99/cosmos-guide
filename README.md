@@ -31,7 +31,7 @@
 |---|---|
 | <img src="docs/img/scale.jpg" alt="尺度之旅"><br><sub>01 · 尺度之旅：一路拖到银河系</sub> | <img src="docs/img/star.jpg" alt="恒星的一生"><br><sub>04 · 恒星的一生：质量滑块与赫罗图联动</sub> |
 | <img src="docs/img/calendar.jpg" alt="宇宙日历"><br><sub>06 · 宇宙日历：拖到 11 月，底部是共享时间条</sub> | <img src="docs/img/expand.jpg" alt="宇宙在膨胀"><br><sub>07 · 宇宙在膨胀：红移 0.4 时的谱线</sub> |
-| <img src="docs/img/exo.jpg" alt="系外行星"><br><sub>09 · 系外行星：发现曲线与凌星亮度</sub> | <img src="docs/img/tour.jpg" alt="30 秒速览"><br><sub>30 秒速览：六句话建立框架</sub> |
+| <img src="docs/img/exo.jpg" alt="系外行星"><br><sub>09 · 系外行星：发现曲线与凌星亮度</sub> | <img src="docs/img/solar.jpg" alt="太阳系"><br><sub>02 · 太阳系：拖到任意日期，行星按真实星历就位</sub> |
 
 ## 三个横向层
 
